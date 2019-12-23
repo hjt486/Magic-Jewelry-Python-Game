@@ -2,7 +2,7 @@
 
 ***THIS IS AN ON-GOING PROJECT...***
 
-A Python version of 1990 NES game ["Magic Jewelry"](https://en.wikipedia.org/wiki/Magic_Jewelry) (click to visit Wikipedia for details), originally developed by by **Hwang Shinwei**, released by **RCM**.
+A Python version of 1990 NES game ["Magic Jewelry"](https://en.wikipedia.org/wiki/Magic_Jewelry) (click to visit Wikipedia for details), originally developed by **Hwang Shinwei**, released by **RCM**.
 
 #### Introduction
 
