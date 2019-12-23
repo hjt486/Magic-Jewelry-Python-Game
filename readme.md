@@ -12,14 +12,14 @@ The reason that I want to develop a Python version of this game is that, when I 
 
 12/22/2019
 
-Applied most basic functions, a single point with color that can remove neighbor points:
+Implemented basic functions (without gravity), please give a try:
 
 <img src="./readme.assets/ResultDisplay.png" alt="ResultDisplay" style="zoom: 50%;" />
 
 #### Development Plan
 
 - ~~Develop a text/console version firstly, using small-size pre-defined grid, by changing a certain point on the grid to test the removing function (>= 3 same-color jewelries was formed), every time a point was changed to trigger the chain reaction.~~
-- Change to pre-defined grid that has more empty space, and create randomly generated 3-in-1 jewelry combination (like original game), which can move up-down, left-right, also make it changeable to rotate the pattern of jewelries on the 3-in1 combination. After moving and assigning position, then trigger DFS for removing.
+- ~~Change to pre-defined grid that has more empty space, and create randomly generated 3-in-1 jewelry combination (like original game), which can move up-down, left-right, also make it changeable to rotate the pattern of jewelries on the 3-in1 combination. After moving and assigning position, then trigger  removing.~~
 - Add gravity, all existed jewelries are stayed below the grid, and if chain-reaction was triggered, the jewelries with holes below can drop down due to the gravity.
 - Set the dropping 3-in-1 jewelry with gravity and certain dropping rate, no longer moving freely to up.
 - Add graphic interface and more features
