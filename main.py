@@ -1,46 +1,55 @@
 import subprocess
 import time
 import random
+from pynput import keyboard
 
 class grid:
     def __init__(self):
         # Define empty hole char, and create 6 x 13 grid
         self.hole = '-'
-        self.grid = [[self.hole] * 6 for i in range(14)]
+        self.grid = [[self.hole] * 6 for i in range(16)]
+        self.grid_width = len(self.grid[0])
+        self.grid_height = len(self.grid)
         #self.color = ['b', 'r', 'y', 'g', 'p', 'o']
         # Define available colors
         self.color = ['✤', '✹', '✿', '♣', '♦', '♥']
         # 3 in 1 bar and its position
+        self.bar_next = []
+        self.bar_next_position = []
         self.bar = []
         self.bar_position = []
+        self.speed = 1
     
     # Generate existed bottom for fun (or more for testing purpose)
     def generateBottomGrid(self, height, ladder = False):
-        for j in range(len(self.grid) - height, len(self.grid)):
-            for i in range(len(self.grid[0])):
+        for j in range(self.grid_height - height, self.grid_height):
+            for i in range(self.grid_width):
                 self.grid[j][i] = self.color[random.randrange(0, 6)]
         # If ladder is True, generate ladder shape
         # (you can test to see difference)
         if ladder == True:
             x = 0
-            for j in range(len(self.grid)-2, len(self.grid)-1-height-1, -1):
+            for j in range(self.grid_height-2, self.grid_height-1-height-1, -1):
                 x += 1
-                for i in range(len(self.grid[0])-1, len(self.grid[0])-1-x, -1):
+                for i in range(self.grid_width-1, self.grid_width-1-x, -1):
                     self.grid[j][i] = self.hole
     
     # Generate a random combiantion of 3 in 1 bar
-    def generateBar(self):
-        # Clear the previous bar
-        self.bar.clear()
-        self.bar_position.clear()
-        # Default position i at [(3, 0),(3, 1),(3, 2)]
+    def generateARandomBar(self):
+        # Generate random number from self.color for a bar at original position
+        return [self.color[random.randrange(0, 6)] for i in range(3)], [(3, 0),(3, 1),(3, 2)]
+        
+    def generateBars(self):
+        if not self.bar_next:
+            self.bar, self.bar_position = self.generateARandomBar()
+            self.bar_next, self.bar_next_position = self.generateARandomBar()
+        else:
+            self.bar, self.bar_position = self.bar_next, self.bar_next_position
+            self.bar_next, self.bar_next_position = self.generateARandomBar()
         for i in range(3):
-            # Generate random number from self.color for a bar at original position
-            point = self.color[random.randrange(0, 6)]
-            self.bar.append(point)
-            self.grid[i][3] = point
-            self.bar_position = [(3, 0),(3, 1),(3, 2)]
-    
+            x, y = self.bar_position[i][0], self.bar_position[i][1]
+            self.grid[y][x] = self.bar[i]
+
     # Move bar around the grid
     def moveBar(self, direction) -> bool:
         # Define the x y coordinates change per step
@@ -53,8 +62,8 @@ class grid:
         element2x, element2y = self.bar_position[1][0], self.bar_position[1][1]
         element3x, element3y = self.bar_position[2][0], self.bar_position[2][1]
         # Get width and height
-        width = len(self.grid[0])
-        height = len(self.grid)
+        width = self.grid_width
+        height = self.grid_height
         # When reach left right, up down edges, return False to trigger Move Failed
         if element1x + a < 0 or element1x + a > width - 1 or element1y + b < 0 or element3y + b > height - 1:
             return False
@@ -76,7 +85,7 @@ class grid:
         # Move by switch value of each point
         for k in range(start, end, step):
             i, j = self.bar_position[k]
-            print(a, b)
+            #print(a, b)
             self.grid[j][i], self.grid[j+b][i+a] = self.grid[j+b][i+a], self.grid[j][i]
             self.bar_position[k] = (i+a, j+b)
         # Return True for successful move operations
@@ -91,10 +100,26 @@ class grid:
 
     # To drop the bar (fix the bar on the grid), and get a new bar
     def dropBar(self):
+        bar_bottom_x, bar_bottom_y = self.bar_position[2][0], self.bar_position[2][1]
+        while bar_bottom_y + 1 < self.grid_height and self.grid[bar_bottom_y + 1][bar_bottom_x] == self.hole:
+            self.moveBar("down")
+            bar_bottom_x, bar_bottom_y = self.bar_position[2][0], self.bar_position[2][1]
         for i in range(3):
             # Call apply function to do removing check
             self.applyFromPoint(self.bar_position[i][0], self.bar_position[i][1])
-        self.generateBar()
+        self.gravityAllPoints()
+        self.generateBars()
+    
+    def gravityDrop(self):
+        bar_bottom_x, bar_bottom_y = self.bar_position[2][0], self.bar_position[2][1]
+        if bar_bottom_y + 1 < self.grid_height and self.grid[bar_bottom_y + 1][bar_bottom_x] == self.hole:
+            self.moveBar("down")
+            #print(self.grid[bar_bottom_y + 1][bar_bottom_x])
+            #print(bar_bottom_x, bar_bottom_y + 1)
+        else:
+            #print("test")
+            self.dropBar()
+        time.sleep(self.speed)
 
     # A text version of display
     def displayGrid(self):
@@ -106,8 +131,8 @@ class grid:
         print("Press Esc and Enter to quit")
         print("")
         print("     0    1    2    3    4    5")
-        for i, row in enumerate(self.grid):
-            print(str(i).zfill(2), row)
+        for i in range(3, len(self.grid)):
+            print(str(i-3).zfill(2), self.grid[i])
         print("")
     
     # Apply the removing check from a point in chain reaction
@@ -123,6 +148,20 @@ class grid:
         for i, j in points_to_be_removed:
             self.grid[j][i] = self.hole
     
+    def applyAll(self):
+        for i in range(3, self.grid_height):
+            for j in range(self.grid_width):
+                self.applyFromPoint(j, i)
+    
+    def gravityAllPoints(self):
+        for i in range(self.grid_height-2, 2, -1):
+            for j in range(self.grid_width):
+                y = i
+                while y < self.grid_height-1 and self.grid[y+1][j] == self.hole:
+                    self.grid[y][j], self.grid[y+1][j] = self.grid[y+1][j], self.grid[y][j]
+                    y += 1
+
+    
     # Chain reaction method, find a chain(same color) in a direction
     def findChain(self, x, y, direction):
         # Define the change of x, y in each step
@@ -137,7 +176,7 @@ class grid:
         counter = 0
         # Stop when reach edges or two points share different colors
         # Else continue adding the same color points' coordinates to the set
-        while i != -1 and j != -1 and i != len(self.grid[0]) and j != len(self.grid) and self.grid[j][i] == self.grid[y][x]:
+        while i != -1 and j != -1 and i != self.grid_width and j != self.grid_height and self.grid[j][i] == self.grid[y][x]:
             chain.add((i, j))
             counter += 1
             i += a
@@ -149,14 +188,30 @@ class grid:
             return set()
         
 def main():
-    directions = {"\x1b[A" : 'up', "\x1b[B" : 'down', "\x1b[D" : 'left', "\x1b[C" : 'right'}
+    #directions = {"\x1b[A" : 'up', "\x1b[B" : 'down', "\x1b[D" : 'left', "\x1b[C" : 'right'}
+    directions = {keyboard.Key.up : 'up', keyboard.Key.down : 'down', keyboard.Key.left : 'left', keyboard.Key.right : 'right'}
     newGame = grid()
-    newGame.generateBottomGrid(3, True)
-    newGame.generateBar()
+    newGame.generateBottomGrid(1, True)
+    newGame.generateBars()
+    newGame.applyAll()
+    def on_press(key):
+        if key in directions:
+            newGame.moveBar(directions[key])
+        elif key == keyboard.KeyCode(vk=0, char='/', is_dead=False):
+            newGame.rotateBar()
+        elif key == keyboard.Key.enter:
+            newGame.dropBar()
+    def on_release(key):
+        #print("on_release")
+        pass
+    listener = keyboard.Listener(on_press=on_press, on_release=on_release)
+    listener.start()
     while True:
         # Refresh screen
         subprocess.call("clear")
         newGame.displayGrid()
+        newGame.gravityDrop()
+        '''
         user_input = input("Give a command\n")
         #print(directions[user_input])
         if user_input == '':
@@ -173,6 +228,7 @@ def main():
             except:
                 print("Wrong Key!")
                 time.sleep(1)
-
+        '''
+    listener.stop()
 if __name__ == "__main__":
     main()
